@@ -1,0 +1,137 @@
+Vector2 map_Cartesian_To_Isometric(Vector2 cartPt) {
+	Vector2 tempPt;
+	tempPt.x = cartPt.x - cartPt.y;
+	tempPt.y = (cartPt.x + cartPt.y) / 2;
+	return tempPt;
+}
+
+Vector2 map_Isometric_To_Cartesian(Vector2 isoPt) {
+	Vector2 tempPt;
+	tempPt.x = (2 * isoPt.y + isoPt.x) / 2;
+	tempPt.y = (2 * isoPt.y - isoPt.x) / 2;
+	return tempPt;
+}
+
+Vector2 map_Grid_To_Screen(int x, int y, int elevation) {
+	Vector2 screenPos;
+
+	screenPos.x = (x - y) * ((float)GLOBAL_TILE_SIZE / 2);
+	screenPos.y = (x + y) * ((float)GLOBAL_TILE_SIZE / 4) - elevation * ((float)GLOBAL_TILE_SIZE / 2);
+	return screenPos;
+}
+
+bool map_Can_Move_To_Position(int x, int y) {
+	if (x < 0 || x >= GLOBAL_GRID_WIDTH || y < 0 || y >= GLOBAL_GRID_HEIGHT) {
+		// Out of bounds
+		return false;
+	}
+
+	// int current_floor_level = 1;
+
+	// Check the tile type and elevation at the specified room_1 position
+	int tileType = room_1.layout[x][y][ROOM_GROUND_FLOOR];   // ground level 0
+	int elevation = room_1.elevation[x][y];  // current floor elevation 1
+
+	// Check if the target tile has an elevation of 1 or is flat ground (elevation 0)
+	if (elevation == 1 || elevation == 0) {
+		// If the tile is a wall or tree, return false
+		if (tileType == ROOM_TILE_WALL || tileType == ROOM_TILE_TREE || tileType == ROOM_TILE_WATER) {
+			return false;
+		}
+
+		return true; // Otherwise, the entity can move to this tile
+	}
+
+	// Check if the entity is moving from elevation 1 to elevation 2 or vice versa
+	int move_elevation = 0;
+
+	int currentElevation = room_1.layout[(int)player.x][(int)player.y][move_elevation];
+	if ((currentElevation == 1 && elevation == 2) || (currentElevation == 2 && elevation == 1)) {
+		return true;
+	}
+
+	return false; // Elevation is 2 or higher, and it's not a valid move from elevation 0
+}
+
+void player_Update() {
+
+    glob_delta_time = GetFrameTime();
+    player.move_timer += glob_delta_time;
+
+    if(player.move_timer >= GLOBAL_PLAYER_MOVE_COOLDOWN)
+    {
+        if (IsKeyDown(KEY_W) || IsKeyDown(KEY_UP) || IsGamepadButtonDown(0, GAMEPAD_BUTTON_LEFT_FACE_UP)) {
+            player_Move_Player_And_Pushable_Block(player.x, player.y - 1, 0, -1);
+            player.move_timer = 0.0f;
+        }
+
+        if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT) || IsGamepadButtonDown(0, GAMEPAD_BUTTON_LEFT_FACE_LEFT)) {
+            player_Move_Player_And_Pushable_Block(player.x - 1, player.y, -1, 0);
+            player.move_timer = 0.0f;
+        }
+
+        if (IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN) || IsGamepadButtonDown(0, GAMEPAD_BUTTON_LEFT_FACE_DOWN)) {
+            player_Move_Player_And_Pushable_Block(player.x, player.y + 1, 0, 1);
+            player.move_timer = 0.0f;
+        }
+
+        if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT) || IsGamepadButtonDown(0, GAMEPAD_BUTTON_LEFT_FACE_RIGHT)) {
+            player_Move_Player_And_Pushable_Block(player.x + 1, player.y, 1, 0);
+            player.move_timer = 0.0f;
+        }
+
+        if (IsKeyPressed(KEY_R) || IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_UP)) {
+            game_Reset();
+        }
+    }
+}
+
+void player_Move_Player_And_Pushable_Block(int targetPlayerX, int targetPlayerY, int dirX, int dirY) {
+    player.target_block_x = targetPlayerX + dirX;
+    player.target_block_y = targetPlayerY + dirY;
+
+    if (map_Can_Move_To_Position(targetPlayerX, targetPlayerY)) {
+        int currentTile = room_1.layout[(int)player.target_block_x][(int)player.target_block_y][ROOM_GROUND_FLOOR]; // Backup current tile
+
+        if (room_1.layout[targetPlayerX][targetPlayerY][ROOM_GROUND_FLOOR] == ROOM_TILE_PUSHABLE_BLOCK) {
+            // Check if there's an enemy at the target position
+            bool enemy_in_target = false;
+            for (int i = 0; i < GLOBAL_MAX_ENEMIES; i++) {
+                if (player.target_block_x == enemy_x[i] && player.target_block_y == enemy_y[i]) {
+                    enemy_in_target = true;
+                    break;
+                }
+            }
+            // Ensure the block can be moved and the target is valid
+            if (enemy_in_target == false && player_Can_Move_Pushable_Block(player.target_block_x, player.target_block_y)) {
+                // Update player position and move block
+                player.x = targetPlayerX;
+                player.y = targetPlayerY;
+                room_1.layout[targetPlayerX][targetPlayerY][ROOM_GROUND_FLOOR] = ROOM_TILE_FLOOR; // Clear the old player position
+                room_1.layout[(int)player.target_block_x][(int)player.target_block_y][ROOM_GROUND_FLOOR] = ROOM_TILE_PUSHABLE_BLOCK; // Place the push block
+            }
+        } else {
+            // Restore the original tile when no block is involved
+            room_1.layout[(int)player.target_block_x][(int)player.target_block_y][ROOM_GROUND_FLOOR] = currentTile;
+            player.x = targetPlayerX;
+            player.y = targetPlayerY;
+        }
+    }
+}
+
+
+bool player_Can_Move_Pushable_Block(int target_block_x, int target_block_y) {
+    if (target_block_x < 0 || target_block_x >= GLOBAL_GRID_WIDTH || target_block_y < 0 || target_block_y >= GLOBAL_GRID_HEIGHT) {
+        return false;
+    }
+
+    int targetBlockType = room_1.layout[target_block_x][target_block_y][ROOM_GROUND_FLOOR];
+
+    if (targetBlockType == ROOM_TILE_FLOOR) {
+        return true;
+    } else if (targetBlockType == ROOM_TILE_WALL || targetBlockType == ROOM_TILE_GEM || targetBlockType == ROOM_TILE_TREE || targetBlockType == ROOM_TILE_DOOR || targetBlockType == ROOM_TILE_ELEVATED || targetBlockType == ROOM_TILE_ELEVATED_2) {
+        return false;
+    }
+
+    return false;
+}

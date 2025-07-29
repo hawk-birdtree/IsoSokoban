@@ -1,0 +1,78 @@
+void player_Move_Player_And_Pushable_Block(int targetPlayerX, int targetPlayerY, int dirX, int dirY) {
+
+    if (room_1.elevation[targetPlayerX][targetPlayerY] > ROOM_NUMBER_OF_FLOORS) {
+        // Print an error message to the console
+        fprintf(stderr, "ERROR: ELEVATION OUT OF BOUNDS IN FILE: %s at line %d\n", __FILE__, __LINE__);
+
+        // Optionally, you can also log this information to a file
+        FILE *logFile = fopen("error_log.txt", "a");
+        if (logFile) {
+            fprintf(logFile, "ERROR: ELEVATION OUT OF BOUNDS IN FILE: %s at line %d\n", __FILE__, __LINE__);
+            fclose(logFile);
+        }
+
+        // Close the game window and terminate the program
+        CloseWindow();
+    }
+
+    int targetBlockX = targetPlayerX + dirX;
+    int targetBlockY = targetPlayerY + dirY;
+
+    if (map_Can_Move_To_Position(targetPlayerX, targetPlayerY)) {
+        int currentTile = room_1.layout[targetPlayerX][targetPlayerY][ROOM_GROUND_FLOOR];
+        int targetElevation = room_1.elevation[targetPlayerX][targetPlayerY];
+
+        // Check if the player is trying to push a block
+        if (currentTile == ROOM_TILE_PUSHABLE_BLOCK) {
+            // Ensure the block can be moved
+            if (player_Can_Move_Pushable_Block(targetBlockX, targetBlockY)) {
+                // Move the block
+                room_1.layout[targetBlockX][targetBlockY][ROOM_GROUND_FLOOR] = ROOM_TILE_PUSHABLE_BLOCK;
+                room_1.layout[targetPlayerX][targetPlayerY][ROOM_GROUND_FLOOR] = ROOM_TILE_FLOOR; // Clear the old block position
+
+                // Reset the elevation of the old block position to its original value
+                room_1.elevation[targetPlayerX][targetPlayerY] = room_1.original_elevation[targetPlayerX][targetPlayerY];
+
+                // Update the player's position
+                player.x = targetPlayerX;
+                player.y = targetPlayerY;
+
+                // Maintain the player's elevation at the target position
+                room_1.elevation[(int)player.x][(int)player.y] = targetElevation;
+            } else {
+                // Block cannot be moved, allow standing on it
+                player.x = targetPlayerX;
+                player.y = targetPlayerY;
+
+                // Set the player's elevation to the block's elevation + 1
+                if (room_1.elevation[(int)player.x][(int)player.y] != targetElevation + 1) {
+                    room_1.elevation[(int)player.x][(int)player.y] = targetElevation + 1;
+                }
+            }
+        } else {
+            // If the player is not standing on the block, reset the elevation of the tile they were on
+            room_1.elevation[(int)player.x][(int)player.y] = room_1.original_elevation[(int)player.x][(int)player.y];
+
+            // Check if there's an enemy at the target position
+            bool enemy_in_target = false;
+            for (int i = 0; i < GLOBAL_MAX_ENEMIES; i++) {
+                if (enemy_x[i] == targetPlayerX && enemy_y[i] == targetPlayerY) {
+                    enemy_in_target = true;
+                    break;
+                }
+            }
+
+            // Only allow movement if there is no enemy
+            if (!enemy_in_target) {
+                // Update the player's position
+                player.x = targetPlayerX;
+                player.y = targetPlayerY;
+
+                // Reset elevation to the target tile's elevation
+                room_1.elevation[(int)player.x][(int)player.y] = room_1.original_elevation[(int)player.x][(int)player.y];
+            }
+        }
+    }
+}
+
+the bug comes from line
