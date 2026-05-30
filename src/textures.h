@@ -10,7 +10,7 @@ extern Texture2D texture_tree;
 extern Texture2D texture_water;
 extern Texture2D texture_elevation;
 extern Texture2D texture_elevation_2;
-extern Texture2D texture_grass;
+// extern Texture2D texture_grass;
 extern Texture2D texture_door;
 extern Texture2D texture_key;
 extern Texture2D texture_gem;

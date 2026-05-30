@@ -9,6 +9,8 @@
 Camera2D glob_camera;
 int      glob_gems = 0;
 float    glob_delta_time = 0.0f;
+int      glob_current_room = 1;
+Room    *glob_active_room = &room_1;
 
 void global_Init_Camera() {
 	glob_camera.target   = (Vector2){0.0f, 0.0f};
@@ -18,7 +20,6 @@ void global_Init_Camera() {
 }
 
 void global_Camera_Update() {
-    // Vector2 playerScreenPos = map_Grid_To_Screen(player.x, player.y, room_1.layout[(int)player.x][(int)player.y][GLOBAL_GROUND_LEVEL]);
     Vector2 playerScreenPos = map_Grid_To_Screen(player.x, player.y, room_1.elevation[(int)player.x][(int)player.y]);
 
     // Define a lerp speed (you can adjust this value)

@@ -1,7 +1,8 @@
 #ifndef ROOMS_H_
 #define ROOMS_H_
 
-#include "globals.h"
+#include "constants.h"
+#include <stdbool.h>
 
 #define ROOM_NUMBER_OF_FLOORS 3
 
@@ -40,6 +41,7 @@ typedef struct {
 } Room;
 
 extern Room room_1;
+extern Room room_2;
 
 void room_Init_Ground_Floor(Room* room);
 void room_Init_First_Floor(Room* room, int startX, int startY);

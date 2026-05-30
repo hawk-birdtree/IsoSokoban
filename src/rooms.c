@@ -4,6 +4,7 @@
 #include "stdio.h"
 
 Room room_1;
+Room room_2;
 
 void room_Init_Ground_Floor(Room* room) {
     glob_gems = 0;
@@ -15,17 +16,7 @@ void room_Init_Ground_Floor(Room* room) {
             room->elevation[x][y]= ROOM_GROUND_FLOOR;
 
             if (room->elevation[x][y] > ROOM_NUMBER_OF_FLOORS) {
-                // Print an error message to the console
-                fprintf(stderr, "ERROR: ELEVATION OUT OF BOUNDS IN FILE: %s at line %d\n", __FILE__, __LINE__);
-
-                // Optionally, you can also log this information to a file
-                FILE *logFile = fopen("error_log.txt", "a");
-                if (logFile) {
-                    fprintf(logFile, "ERROR: ELEVATION OUT OF BOUNDS IN FILE: %s at line %d\n", __FILE__, __LINE__);
-                    fclose(logFile);
-                }
-
-                // Close the game window and terminate the program
+                TraceLog(LOG_ERROR, "ELEVATION OUT OF BOUNDS IN FILE: %s at line %d", __FILE__, __LINE__);
                 CloseWindow();
             }
         }
@@ -37,15 +28,7 @@ void room_Init_First_Floor(Room* room, int start_x, int start_y) {
     for (int x = 0; x < GLOBAL_GRID_WIDTH; ++x) {
         for (int y = 0; y < GLOBAL_GRID_HEIGHT; ++y) {
             if (room->elevation[x][y] > ROOM_NUMBER_OF_FLOORS) {
-                // Print an error message to the console
-                fprintf(stderr, "ERROR: ELEVATION OUT OF BOUNDS IN FILE: %s at line %d\n", __FILE__, __LINE__);
-
-                // Optionally, you can also log this information to a file
-                FILE *logFile = fopen("error_log.txt", "a");
-                if (logFile) {
-                    fprintf(logFile, "ERROR: ELEVATION OUT OF BOUNDS IN FILE: %s at line %d\n", __FILE__, __LINE__);
-                    fclose(logFile);
-                }
+                TraceLog(LOG_ERROR, "ELEVATION OUT OF BOUNDS IN FILE: %s at line %d", __FILE__, __LINE__);
             }
         }
     }
@@ -102,7 +85,7 @@ void room_Init_First_Floor(Room* room, int start_x, int start_y) {
 
     for (int x = 0; x < GLOBAL_GRID_WIDTH; ++x) {
         for (int y = 0; y < GLOBAL_GRID_HEIGHT; ++y) {
-            room->original_elevation[x][y] = room_1.elevation[x][y];
+            room->original_elevation[x][y] = room->elevation[x][y];
         }
     }
 

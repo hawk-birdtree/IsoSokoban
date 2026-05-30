@@ -43,15 +43,9 @@ bool map_Can_Move_To_Position(int x, int y) {
 
 	// Disallow movement onto impassable tiles, unless the player is at a higher elevation
 	if (tileType == ROOM_TILE_WALL) {
-		// if (currentElevation > elevation) {
-			// If the player is at a higher elevation, allow standing on walls, trees, or water
-			// return true;
-		// }
 		int originalElevation = room_1.original_elevation[x][y];
 
 		if(currentElevation > originalElevation){
-			// abs(currentElevation - (originalElevation + 1)) <= 1 ||
-			// abs(currentElevation - elevation) <= 1){
 				return(true);
 			}
 		return(false); // Still disallow movement onto impassable tiles otherwise
@@ -64,7 +58,6 @@ bool map_Can_Move_To_Position(int x, int y) {
 
 	// Allow movement between tiles of the same or adjacent elevation
 	if (abs(currentElevation - elevation) <= 1) {
-		// currentElevation = room_1.elevation[(int)player.x][(int)player.y];
 		return true;
 	}
 
@@ -89,18 +82,8 @@ void map_Draw_First_Floor(int x, int y)
 	Vector2 screenPos = map_Grid_To_Screen(x, y, room_1.layout[x][y][map_elevation_1]);
 	int elevation = room_1.elevation[x][y];
 
-	// global_CheckElevationAndHandleError(elevation);
-
 	if (elevation > ROOM_NUMBER_OF_FLOORS) {
-		// Print an error message to the console
-		fprintf(stderr, "ERROR: ELEVATION OUT OF BOUNDS IN FILE: %s at line %d\n", __FILE__, __LINE__);
-
-		// Optionally, you can also log this information to a file
-		FILE *logFile = fopen("error_log.txt", "a");
-		if (logFile) {
-			fprintf(logFile, "ERROR: ELEVATION OUT OF BOUNDS IN FILE: %s at line %d\n", __FILE__, __LINE__);
-			fclose(logFile);
-		}
+		TraceLog(LOG_ERROR, "ELEVATION OUT OF BOUNDS IN FILE: %s at line %d", __FILE__, __LINE__);
 	}
 
 	int text_size = 20;

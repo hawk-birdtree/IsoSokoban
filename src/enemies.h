@@ -19,6 +19,7 @@ extern float enemy_x[GLOBAL_MAX_ENEMIES];
 extern float enemy_y[GLOBAL_MAX_ENEMIES];
 extern float enemy_initial_x[GLOBAL_MAX_ENEMIES]; // Example initial positions (you can change these)
 extern float enemy_initial_y[GLOBAL_MAX_ENEMIES];
+extern int   enemy_facing_direction[GLOBAL_MAX_ENEMIES];
 extern bool  enemy_is_moving;
 extern float enemy_move_timer;
 extern int   enemy_speed;
