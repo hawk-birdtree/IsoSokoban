@@ -1,3 +1,14 @@
+// why is the message for the door displayed at 0, 0?
+//   the door message needs to be in the same place the door is at
+// why can the push blocks get moved to elevated positions, but not the player?
+// why does room 2 reset after the player get's all the things?
+// why do the enemies reset to random positions after they collide with the player?
+// why can the player move under some block but not others?
+// why can the player push the push block into enemies, but not gems or keys?
+
+
+#include "raylib.h"
+#include "enemies.h"
 #include "rooms.h"
 #include "globals.h"
 #include "player.h"
@@ -6,107 +17,441 @@
 Room room_1;
 Room room_2;
 
-void room_Init_Ground_Floor(Room* room) {
-    glob_gems = 0;
+void room_Load_From_png(Room* room, const char* floor_0_path, const char* floor_1_path, const char* floor_2_path)
+{
+    Image floor_0 = LoadImage(floor_0_path);
+    if(floor_0.data == NULL)
+    {
+        TraceLog(LOG_ERROR, "Failed to load image: %s", floor_0_path);
+        return;
+    }
 
-    for (int x = 0; x < GLOBAL_GRID_WIDTH; ++x) {
-        for (int y = 0; y < GLOBAL_GRID_HEIGHT; ++y) {
+    Image floor_1 = LoadImage(floor_1_path);
+    if(floor_1.data == NULL)
+    {
+        TraceLog(LOG_ERROR, "Failed to load image: %s", floor_1_path);
+        return;
+    }
+    
+    Image floor_2 = LoadImage(floor_2_path);
+    if(floor_2.data == NULL)
+    {
+        TraceLog(LOG_ERROR, "Failed to load image: %s", floor_2_path);
+        return;
+    }
+    
+    room->enemy_spawn_count = 0;
 
-            room->layout[x][y][ROOM_GROUND_FLOOR] = ROOM_TILE_FLOOR;
-            room->elevation[x][y]= ROOM_GROUND_FLOOR;
-
-            if (room->elevation[x][y] > ROOM_NUMBER_OF_FLOORS) {
-                TraceLog(LOG_ERROR, "ELEVATION OUT OF BOUNDS IN FILE: %s at line %d", __FILE__, __LINE__);
-                CloseWindow();
+    //ground floor
+    for(int x = 0; x < CONSTANT_GRID_WIDTH; x++)
+    {
+        for(int y = 0; y < CONSTANT_GRID_HEIGHT; y++)
+        {
+            Color pixel = GetImageColor(floor_0, x, y);
+            
+            if(ColorIsEqual(pixel, WHITE))
+            {
+                room->layout[x][y][ROOM_GROUND_FLOOR] = ROOM_TILE_FLOOR;
+            }
+            else if(ColorIsEqual(pixel, BLACK))
+            {
+                room->layout[x][y][ROOM_GROUND_FLOOR] = ROOM_TILE_WALL;
+            }
+            else if(ColorIsEqual(pixel, GREEN))
+            {
+                room->layout[x][y][ROOM_GROUND_FLOOR] = ROOM_TILE_TREE;
+            }
+            else if(ColorIsEqual(pixel, SKYBLUE))
+            {
+                room->layout[x][y][ROOM_GROUND_FLOOR] = ROOM_TILE_WATER;
+            }
+            else if(ColorIsEqual(pixel, BEIGE))
+            {
+                room->layout[x][y][ROOM_GROUND_FLOOR] = ROOM_TILE_KEY;
+            }
+            else if(ColorIsEqual(pixel, DARKGREEN))
+            {
+                room->layout[x][y][ROOM_GROUND_FLOOR] = ROOM_TILE_DOOR;
+            }
+            else if(ColorIsEqual(pixel, BROWN))
+            {
+                room->layout[x][y][ROOM_GROUND_FLOOR] = ROOM_TILE_GEM;
+            }
+            else if(ColorIsEqual(pixel, DARKPURPLE))
+            {
+                room->layout[x][y][ROOM_GROUND_FLOOR] = ROOM_TILE_PUSHABLE_BLOCK;
+            }
+            else if(ColorIsEqual(pixel, DARKBROWN))
+            {
+                room->layout[x][y][ROOM_GROUND_FLOOR] = ROOM_TILE_PUSHABLE_BLOCK_END_POINT;
+            }
+            else if(ColorIsEqual(pixel, LIGHTGRAY))
+            {
+                room->layout[x][y][ROOM_GROUND_FLOOR] = ROOM_TILE_ELEVATION_1;
+                room->elevation[x][y] = ROOM_FIRST_FLOOR;
+            }
+            else if(ColorIsEqual(pixel, GRAY))
+            {
+                room->layout[x][y][ROOM_GROUND_FLOOR] = ROOM_TILE_ELEVATION_2;
+                room->elevation[x][y] = ROOM_SECOND_FLOOR;
+            }
+            else if(ColorIsEqual(pixel, YELLOW))
+            {
+                if(room->enemy_spawn_count < CONSTANT_MAX_ENEMIES)
+                {
+                    room->enemy_spawn_x[room->enemy_spawn_count] = x;
+                    room->enemy_spawn_y[room->enemy_spawn_count] = y;
+                    room->enemy_spawn_type[room->enemy_spawn_count] = ENEMY_TYPE_RUNNER;                
+                    room->enemy_spawn_count++;
+                }
+            }
+            else if(ColorIsEqual(pixel, GOLD))
+            {
+                if(room->enemy_spawn_count < CONSTANT_MAX_ENEMIES)
+                {
+                    room->enemy_spawn_x[room->enemy_spawn_count] = x;
+                    room->enemy_spawn_y[room->enemy_spawn_count] = y;
+                    room->enemy_spawn_type[room->enemy_spawn_count] = ENEMY_TYPE_CHASER;                
+                    room->enemy_spawn_count++;
+                }               
+            }
+            else if(ColorIsEqual(pixel, MAROON))
+            {
+                if(room->enemy_spawn_count < CONSTANT_MAX_ENEMIES)
+                {
+                    room->enemy_spawn_x[room->enemy_spawn_count] = x;
+                    room->enemy_spawn_y[room->enemy_spawn_count] = y;
+                    room->enemy_spawn_type[room->enemy_spawn_count] = ENEMY_TYPE_SPIKE;                
+                    room->enemy_spawn_count++;
+                }               
+            }
+            else if(ColorIsEqual(pixel,ORANGE))
+            {
+                if(room->enemy_spawn_count < CONSTANT_MAX_ENEMIES)
+                {
+                    room->enemy_spawn_x[room->enemy_spawn_count] = x;
+                    room->enemy_spawn_y[room->enemy_spawn_count] = y;
+                    room->enemy_spawn_type[room->enemy_spawn_count] = ENEMY_TYPE_RANDOM_WALKER;                
+                    room->enemy_spawn_count++;
+                }               
+            }
+            else if(ColorIsEqual(pixel, PINK))
+            {
+                if(room->enemy_spawn_count < CONSTANT_MAX_ENEMIES)
+                {
+                    room->enemy_spawn_x[room->enemy_spawn_count] = x;
+                    room->enemy_spawn_y[room->enemy_spawn_count] = y;
+                    room->enemy_spawn_type[room->enemy_spawn_count] = ENEMY_TYPE_HORIZONTAL;                
+                    room->enemy_spawn_count++;
+                }                
+            }
+            else if(ColorIsEqual(pixel, RED))
+            {
+                if(room->enemy_spawn_count < CONSTANT_MAX_ENEMIES)
+                {
+                    room->enemy_spawn_x[room->enemy_spawn_count] = x;
+                    room->enemy_spawn_y[room->enemy_spawn_count] = y;
+                    room->enemy_spawn_type[room->enemy_spawn_count] = ENEMY_TYPE_VERTICAL;                
+                    room->enemy_spawn_count++;
+                }               
+            }
+            else if(ColorIsEqual(pixel, LIME))
+            {
+                if(room->enemy_spawn_count < CONSTANT_MAX_ENEMIES)
+                {
+                    room->enemy_spawn_x[room->enemy_spawn_count] = x;
+                    room->enemy_spawn_y[room->enemy_spawn_count] = y;
+                    room->enemy_spawn_type[room->enemy_spawn_count] = ENEMY_TYPE_HORIZONTAL_SNIPER;                
+                    room->enemy_spawn_count++;
+                }               
+            }
+            else if(ColorIsEqual(pixel, BLUE))
+            {
+                room->start_x = x;
+                room->start_y = y;
             }
         }
     }
-}
-
-void room_Init_First_Floor(Room* room, int start_x, int start_y) {
-
-    for (int x = 0; x < GLOBAL_GRID_WIDTH; ++x) {
-        for (int y = 0; y < GLOBAL_GRID_HEIGHT; ++y) {
-            if (room->elevation[x][y] > ROOM_NUMBER_OF_FLOORS) {
-                TraceLog(LOG_ERROR, "ELEVATION OUT OF BOUNDS IN FILE: %s at line %d", __FILE__, __LINE__);
+    
+    //first floor
+    for(int x = 0; x < CONSTANT_GRID_WIDTH; x++)
+    {
+        for(int y = 0; y < CONSTANT_GRID_HEIGHT; y++)
+        {
+            Color pixel = GetImageColor(floor_1, x, y);
+            
+            if(ColorIsEqual(pixel, WHITE))
+            {
+                room->layout[x][y][ROOM_FIRST_FLOOR] = ROOM_TILE_FLOOR;
+            }
+            else if(ColorIsEqual(pixel, BLACK))
+            {
+                room->layout[x][y][ROOM_FIRST_FLOOR] = ROOM_TILE_WALL;
+            }
+            else if(ColorIsEqual(pixel, GREEN))
+            {
+                room->layout[x][y][ROOM_FIRST_FLOOR] = ROOM_TILE_TREE;
+            }
+            else if(ColorIsEqual(pixel, SKYBLUE))
+            {
+                room->layout[x][y][ROOM_FIRST_FLOOR] = ROOM_TILE_WATER;
+            }
+            else if(ColorIsEqual(pixel, BEIGE))
+            {
+                room->layout[x][y][ROOM_FIRST_FLOOR] = ROOM_TILE_KEY;
+            }
+            else if(ColorIsEqual(pixel, DARKGREEN))
+            {
+                room->layout[x][y][ROOM_FIRST_FLOOR] = ROOM_TILE_DOOR;
+            }
+            else if(ColorIsEqual(pixel, BROWN))
+            {
+                room->layout[x][y][ROOM_FIRST_FLOOR] = ROOM_TILE_GEM;
+            }
+            else if(ColorIsEqual(pixel, DARKPURPLE))
+            {
+                room->layout[x][y][ROOM_FIRST_FLOOR] = ROOM_TILE_PUSHABLE_BLOCK;
+            }
+            else if(ColorIsEqual(pixel, DARKBROWN))
+            {
+                room->layout[x][y][ROOM_FIRST_FLOOR] = ROOM_TILE_PUSHABLE_BLOCK_END_POINT;
+            }
+            else if(ColorIsEqual(pixel, LIGHTGRAY))
+            {
+                room->layout[x][y][ROOM_FIRST_FLOOR] = ROOM_TILE_ELEVATION_1;
+                room->elevation[x][y] = ROOM_FIRST_FLOOR;
+            }
+            else if(ColorIsEqual(pixel, GRAY))
+            {
+                room->layout[x][y][ROOM_FIRST_FLOOR] = ROOM_TILE_ELEVATION_2;
+                room->elevation[x][y] = ROOM_SECOND_FLOOR;
+            }
+            else if(ColorIsEqual(pixel, YELLOW))
+            {
+                if(room->enemy_spawn_count < CONSTANT_MAX_ENEMIES)
+                {
+                    room->enemy_spawn_x[room->enemy_spawn_count] = x;
+                    room->enemy_spawn_y[room->enemy_spawn_count] = y;
+                    room->enemy_spawn_type[room->enemy_spawn_count] = ENEMY_TYPE_RUNNER;                
+                    room->enemy_spawn_count++;
+                }
+            }
+            else if(ColorIsEqual(pixel, GOLD))
+            {
+                if(room->enemy_spawn_count < CONSTANT_MAX_ENEMIES)
+                {
+                    room->enemy_spawn_x[room->enemy_spawn_count] = x;
+                    room->enemy_spawn_y[room->enemy_spawn_count] = y;
+                    room->enemy_spawn_type[room->enemy_spawn_count] = ENEMY_TYPE_CHASER;                
+                    room->enemy_spawn_count++;
+                }               
+            }
+            else if(ColorIsEqual(pixel, MAROON))
+            {
+                if(room->enemy_spawn_count < CONSTANT_MAX_ENEMIES)
+                {
+                    room->enemy_spawn_x[room->enemy_spawn_count] = x;
+                    room->enemy_spawn_y[room->enemy_spawn_count] = y;
+                    room->enemy_spawn_type[room->enemy_spawn_count] = ENEMY_TYPE_SPIKE;                
+                    room->enemy_spawn_count++;
+                }               
+            }
+            else if(ColorIsEqual(pixel,ORANGE))
+            {
+                if(room->enemy_spawn_count < CONSTANT_MAX_ENEMIES)
+                {
+                    room->enemy_spawn_x[room->enemy_spawn_count] = x;
+                    room->enemy_spawn_y[room->enemy_spawn_count] = y;
+                    room->enemy_spawn_type[room->enemy_spawn_count] = ENEMY_TYPE_RANDOM_WALKER;                
+                    room->enemy_spawn_count++;
+                }               
+            }
+            else if(ColorIsEqual(pixel, PINK))
+            {
+                if(room->enemy_spawn_count < CONSTANT_MAX_ENEMIES)
+                {
+                    room->enemy_spawn_x[room->enemy_spawn_count] = x;
+                    room->enemy_spawn_y[room->enemy_spawn_count] = y;
+                    room->enemy_spawn_type[room->enemy_spawn_count] = ENEMY_TYPE_HORIZONTAL;                
+                    room->enemy_spawn_count++;
+                }                
+            }
+            else if(ColorIsEqual(pixel, RED))
+            {
+                if(room->enemy_spawn_count < CONSTANT_MAX_ENEMIES)
+                {
+                    room->enemy_spawn_x[room->enemy_spawn_count] = x;
+                    room->enemy_spawn_y[room->enemy_spawn_count] = y;
+                    room->enemy_spawn_type[room->enemy_spawn_count] = ENEMY_TYPE_VERTICAL;                
+                    room->enemy_spawn_count++;
+                }               
+            }
+            else if(ColorIsEqual(pixel, LIME))
+            {
+                if(room->enemy_spawn_count < CONSTANT_MAX_ENEMIES)
+                {
+                    room->enemy_spawn_x[room->enemy_spawn_count] = x;
+                    room->enemy_spawn_y[room->enemy_spawn_count] = y;
+                    room->enemy_spawn_type[room->enemy_spawn_count] = ENEMY_TYPE_HORIZONTAL_SNIPER;                
+                    room->enemy_spawn_count++;
+                }               
+            }
+            else if(ColorIsEqual(pixel, BLUE))
+            {
+                room->start_x = x;
+                room->start_y = y;
             }
         }
     }
-
-    room->layout[0][7][ROOM_GROUND_FLOOR] = ROOM_TILE_ELEVATED_2;
-    room->elevation[0][7]                 = ROOM_SECOND_FLOOR;
-    room->layout[1][7][ROOM_GROUND_FLOOR] = ROOM_TILE_ELEVATED;
-    room->elevation[1][7]                 = ROOM_FIRST_FLOOR;
-
-
-    room->layout[7][4][ROOM_GROUND_FLOOR] = ROOM_TILE_ELEVATED_2;
-    room->elevation[7][4]                 = ROOM_FIRST_FLOOR;
-    room->layout[8][1][ROOM_GROUND_FLOOR] = ROOM_TILE_ELEVATED_2;
-    room->elevation[8][1]                 = ROOM_FIRST_FLOOR;
-
-    room->key_x = 8;
-    room->key_y = 8;
-    room->door_x = 4;
-    room->door_y = 4;
-
-    room->layout[room->door_x][room->door_y][ROOM_GROUND_FLOOR] = ROOM_TILE_DOOR;
-    room->elevation[room->door_x][room->door_y]                 = ROOM_GROUND_FLOOR;
-    room->layout[room->key_x][room->key_y][ROOM_GROUND_FLOOR]   = ROOM_TILE_KEY;
-    room->elevation[room->key_x][room->key_y]                   = ROOM_GROUND_FLOOR;
-
-    room->layout[2][8][ROOM_GROUND_FLOOR] = ROOM_TILE_WALL;
-    room->layout[4][0][ROOM_GROUND_FLOOR] = ROOM_TILE_WALL;
-    room->layout[6][4][ROOM_GROUND_FLOOR] = ROOM_TILE_WALL;
-
-
-    room->layout[1][0][ROOM_GROUND_FLOOR] = ROOM_TILE_TREE;
-
-    room->layout[9][6][ROOM_GROUND_FLOOR] = ROOM_TILE_GEM;
-    room->layout[4][7][ROOM_GROUND_FLOOR] = ROOM_TILE_WATER;
-    room->layout[3][2][ROOM_GROUND_FLOOR] = ROOM_TILE_WATER;
-    room->layout[1][3][ROOM_GROUND_FLOOR] = ROOM_TILE_GEM;
-/*
-    int blockPosX[GLOBAL_MAX_PUSHBLOCKS] = {3,3,3,4,4,4,5,5,5};
-    int blockPosY[GLOBAL_MAX_PUSHBLOCKS] = {4,5,6,4,5,6,4,5,6};*/
-
-    int blockPosX[GLOBAL_MAX_PUSHBLOCKS] = {3,3,3};
-    int blockPosY[GLOBAL_MAX_PUSHBLOCKS] = {4,5,5};
-
-    for(int i = 0; i <GLOBAL_MAX_PUSHBLOCKS; i++)
+    
+    //second floor
+    for(int x = 0; x < CONSTANT_GRID_WIDTH; x++)
     {
-        room->block_X[i] = blockPosX[i];
-        room->block_Y[i] = blockPosY[i];
-    }
-
-    for(int i = 0; i < GLOBAL_MAX_PUSHBLOCKS; i++)
-    {
-        room->layout[room->block_X[i]][room->block_Y[i]][ROOM_GROUND_FLOOR] = ROOM_TILE_PUSHABLE_BLOCK;
-    }
-
-    for (int x = 0; x < GLOBAL_GRID_WIDTH; ++x) {
-        for (int y = 0; y < GLOBAL_GRID_HEIGHT; ++y) {
-            room->original_elevation[x][y] = room->elevation[x][y];
+        for(int y = 0; y < CONSTANT_GRID_HEIGHT; y++)
+        {
+            Color pixel = GetImageColor(floor_2, x, y);
+            
+            if(ColorIsEqual(pixel, WHITE))
+            {
+                room->layout[x][y][ROOM_SECOND_FLOOR] = ROOM_TILE_FLOOR;
+            }
+            else if(ColorIsEqual(pixel, BLACK))
+            {
+                room->layout[x][y][ROOM_SECOND_FLOOR] = ROOM_TILE_WALL;
+            }
+            else if(ColorIsEqual(pixel, GREEN))
+            {
+                room->layout[x][y][ROOM_SECOND_FLOOR] = ROOM_TILE_TREE;
+            }
+            else if(ColorIsEqual(pixel, SKYBLUE))
+            {
+                room->layout[x][y][ROOM_SECOND_FLOOR] = ROOM_TILE_WATER;
+            }
+            else if(ColorIsEqual(pixel, BEIGE))
+            {
+                room->layout[x][y][ROOM_SECOND_FLOOR] = ROOM_TILE_KEY;
+            }
+            else if(ColorIsEqual(pixel, DARKGREEN))
+            {
+                room->layout[x][y][ROOM_SECOND_FLOOR] = ROOM_TILE_DOOR;
+            }
+            else if(ColorIsEqual(pixel, BROWN))
+            {
+                room->layout[x][y][ROOM_SECOND_FLOOR] = ROOM_TILE_GEM;
+            }
+            else if(ColorIsEqual(pixel, DARKPURPLE))
+            {
+                room->layout[x][y][ROOM_SECOND_FLOOR] = ROOM_TILE_PUSHABLE_BLOCK;
+            }
+            else if(ColorIsEqual(pixel, DARKBROWN))
+            {
+                room->layout[x][y][ROOM_SECOND_FLOOR] = ROOM_TILE_PUSHABLE_BLOCK_END_POINT;
+            }
+            else if(ColorIsEqual(pixel, LIGHTGRAY))
+            {
+                room->layout[x][y][ROOM_SECOND_FLOOR] = ROOM_TILE_ELEVATION_1;
+                room->elevation[x][y] = ROOM_SECOND_FLOOR;
+            }
+            else if(ColorIsEqual(pixel, GRAY))
+            {
+                room->layout[x][y][ROOM_SECOND_FLOOR] = ROOM_TILE_ELEVATION_2;
+                room->elevation[x][y] = ROOM_SECOND_FLOOR;
+            }
+            else if(ColorIsEqual(pixel, YELLOW))
+            {
+                if(room->enemy_spawn_count < CONSTANT_MAX_ENEMIES)
+                {
+                    room->enemy_spawn_x[room->enemy_spawn_count] = x;
+                    room->enemy_spawn_y[room->enemy_spawn_count] = y;
+                    room->enemy_spawn_type[room->enemy_spawn_count] = ENEMY_TYPE_RUNNER;                
+                    room->enemy_spawn_count++;
+                }
+            }
+            else if(ColorIsEqual(pixel, GOLD))
+            {
+                if(room->enemy_spawn_count < CONSTANT_MAX_ENEMIES)
+                {
+                    room->enemy_spawn_x[room->enemy_spawn_count] = x;
+                    room->enemy_spawn_y[room->enemy_spawn_count] = y;
+                    room->enemy_spawn_type[room->enemy_spawn_count] = ENEMY_TYPE_CHASER;                
+                    room->enemy_spawn_count++;
+                }               
+            }
+            else if(ColorIsEqual(pixel, MAROON))
+            {
+                if(room->enemy_spawn_count < CONSTANT_MAX_ENEMIES)
+                {
+                    room->enemy_spawn_x[room->enemy_spawn_count] = x;
+                    room->enemy_spawn_y[room->enemy_spawn_count] = y;
+                    room->enemy_spawn_type[room->enemy_spawn_count] = ENEMY_TYPE_SPIKE;                
+                    room->enemy_spawn_count++;
+                }               
+            }
+            else if(ColorIsEqual(pixel,ORANGE))
+            {
+                if(room->enemy_spawn_count < CONSTANT_MAX_ENEMIES)
+                {
+                    room->enemy_spawn_x[room->enemy_spawn_count] = x;
+                    room->enemy_spawn_y[room->enemy_spawn_count] = y;
+                    room->enemy_spawn_type[room->enemy_spawn_count] = ENEMY_TYPE_RANDOM_WALKER;                
+                    room->enemy_spawn_count++;
+                }               
+            }
+            else if(ColorIsEqual(pixel, PINK))
+            {
+                if(room->enemy_spawn_count < CONSTANT_MAX_ENEMIES)
+                {
+                    room->enemy_spawn_x[room->enemy_spawn_count] = x;
+                    room->enemy_spawn_y[room->enemy_spawn_count] = y;
+                    room->enemy_spawn_type[room->enemy_spawn_count] = ENEMY_TYPE_HORIZONTAL;                
+                    room->enemy_spawn_count++;
+                }                
+            }
+            else if(ColorIsEqual(pixel, RED))
+            {
+                if(room->enemy_spawn_count < CONSTANT_MAX_ENEMIES)
+                {
+                    room->enemy_spawn_x[room->enemy_spawn_count] = x;
+                    room->enemy_spawn_y[room->enemy_spawn_count] = y;
+                    room->enemy_spawn_type[room->enemy_spawn_count] = ENEMY_TYPE_VERTICAL;                
+                    room->enemy_spawn_count++;
+                }               
+            }
+            else if(ColorIsEqual(pixel, LIME))
+            {
+                if(room->enemy_spawn_count < CONSTANT_MAX_ENEMIES)
+                {
+                    room->enemy_spawn_x[room->enemy_spawn_count] = x;
+                    room->enemy_spawn_y[room->enemy_spawn_count] = y;
+                    room->enemy_spawn_type[room->enemy_spawn_count] = ENEMY_TYPE_HORIZONTAL_SNIPER;                
+                    room->enemy_spawn_count++;
+                }               
+            }
+            else if(ColorIsEqual(pixel, BLUE))
+            {
+                room->start_x = x;
+                room->start_y = y;
+            }
         }
     }
-
-    room->start_x = start_x;
-    room->start_y = start_y;
-    room->show_door_message = false;
+    
+    //TO DO: more floors...?
+    
+    UnloadImage(floor_0);
+    UnloadImage(floor_1);
+    UnloadImage(floor_2);
 }
 
 void room_Pick_Up_Key(void) {
     // Change the tile type at the player's current position to a floor tile
-    room_1.layout[(int)player.x][(int)player.y][ROOM_GROUND_FLOOR] = ROOM_TILE_FLOOR;
+    global_active_room->layout[(int)player.x][(int)player.y][ROOM_GROUND_FLOOR] = ROOM_TILE_FLOOR;
     player.has_key = true;
 }
 
 bool room_Can_Use_Door(void) {
-    // Check if the player has the key
     return player.has_key;
 }
 
-
-void room_Pick_Up_Loot(void)
-{
-    room_1.layout[(int)player.x][(int)player.y][ROOM_GROUND_FLOOR] = ROOM_TILE_FLOOR;
+void room_Pick_Up_Loot(void){
+    global_active_room->layout[(int)player.x][(int)player.y][ROOM_GROUND_FLOOR] = ROOM_TILE_FLOOR;
 }

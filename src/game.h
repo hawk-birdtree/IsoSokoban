@@ -11,11 +11,11 @@ extern float game_rectHeight; // Height of the rectangle
 extern float game_rectX; // X position of the rectangle
 extern float game_rectY; // Y position of the rectangle
 
-void game_Init();
-void game_Reset();
-void game_Load_Next_Room(Room* next_room);
-void game_Update();
-void game_Draw();
-void game_Unload();
+void game_Init(void);
+void game_Reset(void);
+void game_Load_Next_Room(Room* next_room, const char* floor_0_path, const char* floor_1_path, const char* floor_2_path);
+void game_Update(void);
+void game_Draw(void);
+void game_Unload(void);
 
 #endif

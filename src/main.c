@@ -4,7 +4,7 @@
 
 int main() {
 
-    InitWindow(GLOBAL_SCREEN_WIDTH, GLOBAL_SCREEN_HEIGHT, "Isometric Game with Raylib");
+    InitWindow(CONSTANT_SCREEN_WIDTH, CONSTANT_SCREEN_HEIGHT, "Isometric Game with Raylib");
 
     game_Init();
 	

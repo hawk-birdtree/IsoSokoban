@@ -8,13 +8,13 @@
 
 Player player;
 
-void player_Init() {
+void player_Init(void) {
     player.elevation = 0;
     player.previous_elevation = 0;
     player.max_hp = 3;
     player.hp = player.max_hp;
-    player.y = 0;
-    player.x = 0;
+    player.x = global_active_room->start_x;
+    player.y = global_active_room->start_y;
     player.previous_x = 0;
     player.previous_y = 0;
     player.target_block_x = 0;
@@ -26,14 +26,14 @@ void player_Init() {
     player.is_invincible = false;
 
     player.has_key  = false;
-    glob_gems = 0;
+    global_gems = 0;
 
     player.move_timer = 0.0f;
 }
 
-void player_Update() {
-    glob_delta_time = GetFrameTime();
-    player.move_timer += glob_delta_time;
+void player_Update(void) {
+    global_delta_time = GetFrameTime();
+    player.move_timer += global_delta_time;
     
     if(player.is_invincible)
     {
@@ -45,15 +45,15 @@ void player_Update() {
     }
     else
     {
-        for(int i = 0; i < GLOBAL_MAX_ENEMIES; i++)
+        for(int i = 0; i < CONSTANT_MAX_ENEMIES; i++)
         {
             if(enemy_x[i] == player.x && enemy_y[i] == player.y)
             {
                 player.hp--;
                 player.is_invincible = true;
                 player.i_frame_counter = 60;
-                player.x = room_1.start_x;
-                player.y = room_1.start_y;
+                player.x = global_active_room->start_x;
+                player.y = global_active_room->start_y;
                 enemy_Reset_Positions();
                 if(player.hp <= 0)
                 {
@@ -64,7 +64,7 @@ void player_Update() {
         }
     }
 
-    if (player.move_timer >= GLOBAL_PLAYER_MOVE_COOLDOWN) {
+    if (player.move_timer >= CONSTANT_PLAYER_MOVE_COOLDOWN) {
         // Store the original position
         float original_x = player.x;
         float original_y = player.y;
@@ -94,12 +94,12 @@ void player_Update() {
             //reset the elevation of the previous position if it was a pushable block
             int prev_x = original_x;
             int prev_y = original_y;
-            int prev_tile = room_1.layout[prev_x][prev_y][ROOM_GROUND_FLOOR];
+            int prev_tile = global_active_room->layout[prev_x][prev_y][ROOM_GROUND_FLOOR];
 
             // Only reset elevation if the previous tile was a pushable block
             if(prev_tile == ROOM_TILE_PUSHABLE_BLOCK ||
                prev_tile == ROOM_TILE_WALL){
-                room_1.elevation[prev_x][prev_y] = room_1.original_elevation[prev_x][prev_y];
+                global_active_room->elevation[prev_x][prev_y] = global_active_room->original_elevation[prev_x][prev_y];
             }
 
             //update the previous position
@@ -123,14 +123,13 @@ void lower_Block_Elevation(int x, int y, int new_elevation) {
         new_elevation = 0;
     }
 
-    // Get the grid position based on x, y (you might need to adjust this depending on how you use x, y)
-    int grid_x = x; // Assuming x is an integer position, adjust as needed
-    int grid_y = y; // Assuming y is an integer position, adjust as needed
+    int grid_x = x; 
+    int grid_y = y; 
 
     // Check if the coordinates are valid within the grid
-    if (grid_x >= 0 && grid_x < GLOBAL_GRID_WIDTH && grid_y >= 0 && grid_y < GLOBAL_GRID_HEIGHT) {
+    if (grid_x >= 0 && grid_x < CONSTANT_GRID_WIDTH && grid_y >= 0 && grid_y < CONSTANT_GRID_HEIGHT) {
         // Update the elevation of the block at the given position
-        room_1.elevation[grid_x][grid_y] = new_elevation;
+        global_active_room->elevation[grid_x][grid_y] = new_elevation;
     }
 }
 
@@ -143,15 +142,11 @@ void player_Draw(int x, int y) {
     };
     
     if (x == player.x && y == player.y) {
-        Vector2 player_screen_pos = map_Grid_To_Screen(player.x, player.y, room_1.elevation[x][y]);
-        // DrawTexture(player.texture, player_screen_pos.x + (float)GLOBAL_SCREEN_WIDTH / 2.0f , (float)player_screen_pos.y , WHITE);
-        DrawTextureRec(player.texture, source, (Vector2){player_screen_pos.x + (float)GLOBAL_SCREEN_WIDTH / 2.0f , (float)player_screen_pos.y} , WHITE);
-        // DrawText(TextFormat("x:%d, y:%d, e:%d", x, y, room_1.elevation[player.x][player.y]), player_screen_pos.x + (float)GLOBAL_SCREEN_WIDTH / 2.0f, (float)player_screen_pos.y - 64.0f , text_size, WHITE);
-        // DrawText(TextFormat("prev_x:%d, prev_y%d",           player.previous_x, player.previous_y), player_screen_pos.x + (float)GLOBAL_SCREEN_WIDTH / 2.0f + 64, (float)player_screen_pos.y, text_size, WHITE);
-        // DrawText(TextFormat("elev:%d",               room_1.elevation[player.x][player.y]), player_screen_pos.x + (float)GLOBAL_SCREEN_WIDTH / 2.0f + 32, (float)player_screen_pos.y - 32.0f , text_size, WHITE);
+        Vector2 player_screen_pos = map_Grid_To_Screen(player.x, player.y, global_active_room->elevation[x][y]);
+        DrawTextureRec(player.texture, source, (Vector2){player_screen_pos.x + (float)CONSTANT_SCREEN_WIDTH / 2.0f , (float)player_screen_pos.y} , WHITE);
         if(player.is_invincible)
         {
-            DrawTexture(player.texture, player_screen_pos.x + (float)GLOBAL_SCREEN_WIDTH / 2.0f , (float)player_screen_pos.y , RED);
+            DrawTexture(player.texture, player_screen_pos.x + (float)CONSTANT_SCREEN_WIDTH / 2.0f , (float)player_screen_pos.y , RED);
         }
     }
     
@@ -163,19 +158,19 @@ void player_Move_Player_And_Pushable_Block(int targetPlayerX, int targetPlayerY,
     int targetBlockY = targetPlayerY + dirY;
 
     if (map_Can_Move_To_Position(targetPlayerX, targetPlayerY)) {
-        int currentTile = room_1.layout[targetPlayerX][targetPlayerY][ROOM_GROUND_FLOOR];    
-        int targetOriginalElevation = room_1.original_elevation[targetPlayerX][targetPlayerY];
+        int currentTile = global_active_room->layout[targetPlayerX][targetPlayerY][ROOM_GROUND_FLOOR];    
+        int targetOriginalElevation = global_active_room->original_elevation[targetPlayerX][targetPlayerY];
 
         // Check if the player is trying to push a block
         if (currentTile == ROOM_TILE_PUSHABLE_BLOCK) {
             // Ensure the block can be moved
             if (player_Can_Move_Pushable_Block(targetBlockX, targetBlockY)) {
                 // Move the block
-                room_1.layout[targetBlockX][targetBlockY][ROOM_GROUND_FLOOR] = ROOM_TILE_PUSHABLE_BLOCK;
-                room_1.layout[targetPlayerX][targetPlayerY][ROOM_GROUND_FLOOR] = ROOM_TILE_FLOOR; // Clear the old block position
+                global_active_room->layout[targetBlockX][targetBlockY][ROOM_GROUND_FLOOR] = ROOM_TILE_PUSHABLE_BLOCK;
+                global_active_room->layout[targetPlayerX][targetPlayerY][ROOM_GROUND_FLOOR] = ROOM_TILE_FLOOR; // Clear the old block position
 
                 // Reset the elevation of the old block position to its original value
-                room_1.elevation[targetPlayerX][targetPlayerY] = targetOriginalElevation;
+                global_active_room->elevation[targetPlayerX][targetPlayerY] = targetOriginalElevation;
 
                 // Update the player's position
                 player.x = targetPlayerX;
@@ -183,48 +178,48 @@ void player_Move_Player_And_Pushable_Block(int targetPlayerX, int targetPlayerY,
 
                 // Maintain the player's elevation at the target position
                 player.elevation = targetOriginalElevation;
-                room_1.elevation[player.x][player.y] = player.elevation;
+                global_active_room->elevation[player.x][player.y] = player.elevation;
 
             } else {
                 player.x = targetPlayerX;
                 player.y = targetPlayerY;
 
-                room_1.elevation[player.x][player.y] = targetOriginalElevation + 1;
-                player.elevation = room_1.elevation[player.x][player.y];
+                global_active_room->elevation[player.x][player.y] = targetOriginalElevation + 1;
+                player.elevation = global_active_room->elevation[player.x][player.y];
             }
         }else if (currentTile == ROOM_TILE_WALL){
             player.x = targetPlayerX;
             player.y = targetPlayerY;
 
-            room_1.elevation[player.x][player.y] = targetOriginalElevation + 1;
-            player.elevation = room_1.elevation[player.x][player.y];
+            global_active_room->elevation[player.x][player.y] = targetOriginalElevation + 1;
+            player.elevation = global_active_room->elevation[player.x][player.y];
         }
         else 
         {
             player.x = targetPlayerX;
             player.y = targetPlayerY;
             player.elevation = targetOriginalElevation;
-            room_1.elevation[player.x][player.y] = player.elevation;
+            global_active_room->elevation[player.x][player.y] = player.elevation;
         }
     }
 }
 
 bool player_Can_Move_Pushable_Block(int target_block_x, int target_block_y) {
-    if (target_block_x < 0 || target_block_x >= GLOBAL_GRID_WIDTH || target_block_y < 0 || target_block_y >= GLOBAL_GRID_HEIGHT) {
+    if (target_block_x < 0 || target_block_x >= CONSTANT_GRID_WIDTH || target_block_y < 0 || target_block_y >= CONSTANT_GRID_HEIGHT) {
         return false;
     }
 
     //prevent block from moving if the player will move to it from above
-    int player_elevation = room_1.elevation[player.x][player.y];
-    if(player_elevation > room_1.elevation[target_block_x][target_block_y])
+    int player_elevation = global_active_room->elevation[player.x][player.y];
+    if(player_elevation > global_active_room->elevation[target_block_x][target_block_y])
     {
         return false;
     }
 
-    int targetBlockType = room_1.layout[target_block_x][target_block_y][ROOM_GROUND_FLOOR];
+    int targetBlockType = global_active_room->layout[target_block_x][target_block_y][ROOM_GROUND_FLOOR];
     if (targetBlockType == ROOM_TILE_FLOOR) {
         return true;
-    } else if (targetBlockType == ROOM_TILE_WALL || targetBlockType == ROOM_TILE_GEM || targetBlockType == ROOM_TILE_TREE || targetBlockType == ROOM_TILE_DOOR || targetBlockType == ROOM_TILE_ELEVATED || targetBlockType == ROOM_TILE_ELEVATED_2) {
+    } else if (targetBlockType == ROOM_TILE_WALL || targetBlockType == ROOM_TILE_GEM || targetBlockType == ROOM_TILE_TREE || targetBlockType == ROOM_TILE_DOOR || targetBlockType == ROOM_TILE_ELEVATION_1 || targetBlockType == ROOM_TILE_ELEVATION_2) {
         return false;
     }
 

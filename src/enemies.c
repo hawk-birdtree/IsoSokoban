@@ -7,16 +7,16 @@
 #include <math.h>
 #include <stddef.h>
 
-float enemy_x[GLOBAL_MAX_ENEMIES];
-float enemy_y[GLOBAL_MAX_ENEMIES];
-float enemy_initial_x[GLOBAL_MAX_ENEMIES]; // Example initial positions (you can change these)
-float enemy_initial_y[GLOBAL_MAX_ENEMIES];
-int   enemy_facing_direction[GLOBAL_MAX_ENEMIES];
+float enemy_x[CONSTANT_MAX_ENEMIES];
+float enemy_y[CONSTANT_MAX_ENEMIES];
+float enemy_initial_x[CONSTANT_MAX_ENEMIES]; // Example initial positions (you can change these)
+float enemy_initial_y[CONSTANT_MAX_ENEMIES];
+int   enemy_facing_direction[CONSTANT_MAX_ENEMIES];
 bool  enemy_is_moving;
 float enemy_move_timer;
 int   enemy_speed;
 
-enum EnemyType enemyTypes[GLOBAL_MAX_ENEMIES] = {
+enum EnemyType enemyTypes[CONSTANT_MAX_ENEMIES] = {
     ENEMY_TYPE_RUNNER,
     ENEMY_TYPE_CHASER,
     ENEMY_TYPE_SPIKE,
@@ -26,36 +26,33 @@ enum EnemyType enemyTypes[GLOBAL_MAX_ENEMIES] = {
     ENEMY_TYPE_HORIZONTAL_SNIPER,
 };
 
-void enemy_Init()
+void enemy_Init(void)
 {
     enemy_is_moving = true;
-    enemy_speed = GLOBAL_ENEMY_SPEED;
+    enemy_speed = 0; //CONSTANT_ENEMY_SPEED;
     enemy_move_timer = 0.0f;
 
+    // Initialize enemy positions
+    for(int i = 0; i < global_active_room->enemy_spawn_count; i++)
+    {
+        enemy_x[i] = global_active_room->enemy_spawn_x[i];
+        enemy_y[i] = global_active_room->enemy_spawn_y[i];
+        enemyTypes[i] = global_active_room->enemy_spawn_type[i];
+    }
+
     // Save initial enemy positions for resetting
-    for (int i = 0; i < GLOBAL_MAX_ENEMIES; i++) {
+    for (int i = 0; i < CONSTANT_MAX_ENEMIES; i++) {
         enemy_initial_x[i] = enemy_x[i];
         enemy_initial_y[i] = enemy_y[i];
         enemy_facing_direction[i] = 1;
     }
 
-    // Initialize enemy positions
-    for (int i = 0; i < GLOBAL_MAX_ENEMIES; i++) {
-        do {
-            enemy_x[i] = GetRandomValue(1, GLOBAL_GRID_WIDTH - 1);
-            enemy_y[i] = GetRandomValue(1, GLOBAL_GRID_HEIGHT - 1);
-        } while (!map_Can_Move_To_Position(enemy_x[i], enemy_y[i]) ||
-        enemy_Is_Position_Occupied(enemy_x[i], enemy_y[i], i) ||
-        (enemy_x[i] == room_1.key_x     && enemy_y[i] == room_1.key_y) || // Avoid spawning on key
-        (enemy_x[i] == room_1.door_x    && enemy_y[i] == room_1.door_y) || //void spawning on door
-        (enemy_x[i] == player.x && enemy_y[i] == player.y)); // Avoid spawning on player
-    }
 }
 
-void enemy_Update_Position() {
-    glob_delta_time = GetFrameTime();  // Get the time passed since the last frame
+void enemy_Update_Position(void) {
+    global_delta_time = GetFrameTime();  // Get the time passed since the last frame
 
-    for (int i = 0; i < GLOBAL_MAX_ENEMIES; i++) {
+    for (int i = 0; i < CONSTANT_MAX_ENEMIES; i++) {
 
         // Get the enemy type
         enum EnemyType enemyType = enemyTypes[i];
@@ -68,10 +65,10 @@ void enemy_Update_Position() {
         float distance = sqrtf(deltaX * deltaX + deltaY * deltaY);
 
         // Update enemy movement based on a move timer for each enemy
-        enemy_move_timer += glob_delta_time;  // Track time for this enemy
+        enemy_move_timer += global_delta_time;  // Track time for this enemy
 
         // If the enemy's move timer has passed the cooldown threshold, move the enemy
-        if (enemy_move_timer >= GLOBAL_ENEMY_MOVE_COOLDOWN) {
+        if (enemy_move_timer >= CONSTANT_ENEMY_MOVE_COOLDOWN) {
             switch (enemyType) {
                 case ENEMY_TYPE_RUNNER:
                 {
@@ -237,7 +234,7 @@ void enemy_Update_Position() {
                     int targetX = enemy_x[i] + (enemy_speed * direction);
                     int targetY = enemy_y[i];
 
-                    if (targetX >= 0 && targetX < GLOBAL_GRID_WIDTH) {
+                    if (targetX >= 0 && targetX < CONSTANT_GRID_WIDTH) {
                         if (!enemy_Is_Position_Occupied(targetX, targetY, i) && map_Can_Move_To_Position(targetX, targetY) &&
                             room_1.layout[targetX][targetY][ROOM_GROUND_FLOOR] != ROOM_TILE_PUSHABLE_BLOCK) {
                             enemy_x[i] = targetX;
@@ -259,7 +256,7 @@ void enemy_Update_Position() {
                     int targetX = enemy_x[i];
                     int targetY = enemy_y[i] + (enemy_speed * direction);
 
-                    if (targetY >= 0 && targetY < GLOBAL_GRID_HEIGHT) {
+                    if (targetY >= 0 && targetY < CONSTANT_GRID_HEIGHT) {
                         if (!enemy_Is_Position_Occupied(targetX, targetY, i) && map_Can_Move_To_Position(targetX, targetY) &&
                             room_1.layout[targetX][targetY][ROOM_GROUND_FLOOR] != ROOM_TILE_PUSHABLE_BLOCK) {
                             enemy_y[i] = targetY;
@@ -288,7 +285,7 @@ void enemy_Update_Position() {
                     int targetY = enemy_y[i];
 
                     // Check bounds and collisions
-                    if (targetX >= 0 && targetX < GLOBAL_GRID_WIDTH) {
+                    if (targetX >= 0 && targetX < CONSTANT_GRID_WIDTH) {
                         if (!enemy_Is_Position_Occupied(targetX, targetY, i) &&
                             map_Can_Move_To_Position(targetX, targetY) &&
                             room_1.layout[targetX][targetY][ROOM_GROUND_FLOOR] != ROOM_TILE_PUSHABLE_BLOCK) {
@@ -319,7 +316,7 @@ void enemy_Draw(int x, int y)
 {
     Texture2D *tex = NULL;
 
-    for (int i = 0; i < GLOBAL_MAX_ENEMIES; i++) {
+    for (int i = 0; i < CONSTANT_MAX_ENEMIES; i++) {
         if (x == enemy_x[i] && y == enemy_y[i]) {
 
             switch (enemyTypes[i]) {
@@ -336,19 +333,19 @@ void enemy_Draw(int x, int y)
             Vector2 enemyScreenPos = map_Grid_To_Screen(enemy_x[i], enemy_y[i], room_1.elevation[x][y]);
             if (tex) {
                 Rectangle source = {0, 0, tex->width * enemy_facing_direction[i], tex->height};
-                DrawTextureRec(*tex, source, (Vector2){enemyScreenPos.x + (float)GLOBAL_SCREEN_WIDTH / 2, enemyScreenPos.y}, WHITE);
+                DrawTextureRec(*tex, source, (Vector2){enemyScreenPos.x + (float)CONSTANT_SCREEN_WIDTH / 2, enemyScreenPos.y}, WHITE);
             }
         }
     }
 }
 
-void enemy_Reset_Positions() {
+void enemy_Reset_Positions(void) {
 
     // Initialize enemy positions
-    for (int i = 0; i < GLOBAL_MAX_ENEMIES; i++) {
+    for (int i = 0; i < CONSTANT_MAX_ENEMIES; i++) {
         do {
-            enemy_x[i] = GetRandomValue(1, GLOBAL_GRID_WIDTH - 1);
-            enemy_y[i] = GetRandomValue(1, GLOBAL_GRID_HEIGHT - 1);
+            enemy_x[i] = GetRandomValue(1, CONSTANT_GRID_WIDTH - 1);
+            enemy_y[i] = GetRandomValue(1, CONSTANT_GRID_HEIGHT - 1);
         } while (!map_Can_Move_To_Position(enemy_x[i], enemy_y[i]) ||
         enemy_Is_Position_Occupied(enemy_x[i], enemy_y[i], i) ||
         (enemy_x[i] == room_1.key_x && enemy_y[i] == room_1.key_y) || // Avoid spawning on key
@@ -358,7 +355,7 @@ void enemy_Reset_Positions() {
 }
 
 bool enemy_Is_Position_Occupied(int x, int y, int currentEnemyIndex) {
-    for (int i = 0; i < GLOBAL_MAX_ENEMIES; i++) {
+    for (int i = 0; i < CONSTANT_MAX_ENEMIES; i++) {
         // Skip the current enemy being checked (currentEnemyIndex)
         if (i == currentEnemyIndex) {
             continue;

@@ -23,19 +23,19 @@ Vector2 map_Isometric_To_Cartesian(Vector2 isoPt) {
 Vector2 map_Grid_To_Screen(int x, int y, int elevation) {
 	Vector2 screenPos;
 
-	screenPos.x = (x - y) * ((float)GLOBAL_TILE_SIZE / 2);
-	screenPos.y = (x + y) * ((float)GLOBAL_TILE_SIZE / 4) - elevation * ((float)GLOBAL_TILE_SIZE / 2);
+	screenPos.x = (x - y) * ((float)CONSTANT_TILE_SIZE / 2);
+	screenPos.y = (x + y) * ((float)CONSTANT_TILE_SIZE / 4) - elevation * ((float)CONSTANT_TILE_SIZE / 2);
 	return screenPos;
 }
 
 bool map_Can_Move_To_Position(int x, int y) {
-	if (x < 0 || x >= GLOBAL_GRID_WIDTH || y < 0 || y >= GLOBAL_GRID_HEIGHT) {
+	if (x < 0 || x >= CONSTANT_GRID_WIDTH || y < 0 || y >= CONSTANT_GRID_HEIGHT) {
 		return false; // Out of bounds
 	}
 
-	int tileType = room_1.layout[x][y][ROOM_GROUND_FLOOR];
-	int elevation = room_1.elevation[x][y];
-	int currentElevation = room_1.elevation[(int)player.x][(int)player.y];
+	int tileType = global_active_room->layout[x][y][ROOM_GROUND_FLOOR];
+	int elevation = global_active_room->elevation[x][y];
+	int currentElevation = global_active_room->elevation[(int)player.x][(int)player.y];
 
 	if(tileType == ROOM_TILE_TREE || tileType == ROOM_TILE_WATER){
 		return false;
@@ -43,7 +43,7 @@ bool map_Can_Move_To_Position(int x, int y) {
 
 	// Disallow movement onto impassable tiles, unless the player is at a higher elevation
 	if (tileType == ROOM_TILE_WALL) {
-		int originalElevation = room_1.original_elevation[x][y];
+		int originalElevation = global_active_room->original_elevation[x][y];
 
 		if(currentElevation > originalElevation){
 				return(true);
@@ -73,14 +73,14 @@ static int map_elevation_1 = 1;
 
 void map_Draw_Ground_Floor(int x, int y)
 {
-	Vector2 screenPos = map_Grid_To_Screen(x, y, room_1.layout[x][y][map_elevation_1]);
-	DrawTexture(texture_floor, 	  (float)screenPos.x + (float)GLOBAL_SCREEN_WIDTH / 2.0f , (float)screenPos.y , WHITE);
+	Vector2 screenPos = map_Grid_To_Screen(x, y, global_active_room->layout[x][y][map_elevation_1]);
+	DrawTexture(texture_floor, 	  (float)screenPos.x + (float)CONSTANT_SCREEN_WIDTH / 2.0f , (float)screenPos.y , WHITE);
 }
 
 void map_Draw_First_Floor(int x, int y)
 {
-	Vector2 screenPos = map_Grid_To_Screen(x, y, room_1.layout[x][y][map_elevation_1]);
-	int elevation = room_1.elevation[x][y];
+	Vector2 screenPos = map_Grid_To_Screen(x, y, global_active_room->layout[x][y][map_elevation_1]);
+	int elevation = global_active_room->elevation[x][y];
 
 	if (elevation > ROOM_NUMBER_OF_FLOORS) {
 		TraceLog(LOG_ERROR, "ELEVATION OUT OF BOUNDS IN FILE: %s at line %d", __FILE__, __LINE__);
@@ -89,46 +89,46 @@ void map_Draw_First_Floor(int x, int y)
 	int text_size = 20;
 	Color tint = WHITE;
 
-	switch (room_1.layout[x][y][ROOM_GROUND_FLOOR]) {
+	switch (global_active_room->layout[x][y][ROOM_GROUND_FLOOR]) {
 		case ROOM_TILE_WALL:
-			DrawTexture(texture_wall, 	  (float)screenPos.x + (float)GLOBAL_SCREEN_WIDTH / 2.0f , (float)screenPos.y , WHITE);
-			DrawText(TextFormat("%d, %d \n%d", x, y,  room_1.elevation[x][y]), (float)screenPos.x + (float)GLOBAL_SCREEN_WIDTH / 2.0f , (float)screenPos.y , text_size, tint);
+			DrawTexture(texture_wall, 	  (float)screenPos.x + (float)CONSTANT_SCREEN_WIDTH / 2.0f , (float)screenPos.y , WHITE);
+			DrawText(TextFormat("%d, %d \n%d", x, y,  global_active_room->elevation[x][y]), (float)screenPos.x + (float)CONSTANT_SCREEN_WIDTH / 2.0f , (float)screenPos.y , text_size, tint);
 			break;
 		case ROOM_TILE_TREE:
-			DrawTexture(texture_tree,  	  (float)screenPos.x + (float)GLOBAL_SCREEN_WIDTH / 2.0f , (float)screenPos.y , WHITE);
-			//DrawText(TextFormat("%d, %d \n%d", x, y,  room_1.elevation[x][y]), (float)screenPos.x + (float)GLOBAL_SCREEN_WIDTH / 2.0f , (float)screenPos.y , text_size, tint);
+			DrawTexture(texture_tree,  	  (float)screenPos.x + (float)CONSTANT_SCREEN_WIDTH / 2.0f , (float)screenPos.y , WHITE);
+			//DrawText(TextFormat("%d, %d \n%d", x, y,  global_active_room->elevation[x][y]), (float)screenPos.x + (float)CONSTANT_SCREEN_WIDTH / 2.0f , (float)screenPos.y , text_size, tint);
 			break;
 		case ROOM_TILE_WATER:
-			DrawTexture(texture_water, 	  (float)screenPos.x + (float)GLOBAL_SCREEN_WIDTH / 2.0f , (float)screenPos.y , WHITE);
-			//DrawText(TextFormat("%d, %d \n%d", x, y,  room_1.elevation[x][y]), (float)screenPos.x + (float)GLOBAL_SCREEN_WIDTH / 2.0f , (float)screenPos.y , text_size, tint);
+			DrawTexture(texture_water, 	  (float)screenPos.x + (float)CONSTANT_SCREEN_WIDTH / 2.0f , (float)screenPos.y , WHITE);
+			//DrawText(TextFormat("%d, %d \n%d", x, y,  global_active_room->elevation[x][y]), (float)screenPos.x + (float)CONSTANT_SCREEN_WIDTH / 2.0f , (float)screenPos.y , text_size, tint);
 			break;
 		case ROOM_TILE_DOOR:
-			DrawTexture(texture_door, 	  (float)screenPos.x + (float)GLOBAL_SCREEN_WIDTH / 2.0f , (float)screenPos.y , WHITE);
-			//DrawText(TextFormat("%d, %d \n%d", x, y,  room_1.elevation[x][y]), (float)screenPos.x + (float)GLOBAL_SCREEN_WIDTH / 2.0f , (float)screenPos.y , text_size, tint);
+			DrawTexture(texture_door, 	  (float)screenPos.x + (float)CONSTANT_SCREEN_WIDTH / 2.0f , (float)screenPos.y , WHITE);
+			//DrawText(TextFormat("%d, %d \n%d", x, y,  global_active_room->elevation[x][y]), (float)screenPos.x + (float)CONSTANT_SCREEN_WIDTH / 2.0f , (float)screenPos.y , text_size, tint);
 			break;
 		case ROOM_TILE_GEM:
-			DrawTexture(texture_gem, 	  (float)screenPos.x + (float)GLOBAL_SCREEN_WIDTH / 2.0f , (float)screenPos.y , WHITE);
-			//DrawText(TextFormat("%d, %d \n%d", x, y,  room_1.elevation[x][y]), (float)screenPos.x + (float)GLOBAL_SCREEN_WIDTH / 2.0f , (float)screenPos.y , text_size, tint);
+			DrawTexture(texture_gem, 	  (float)screenPos.x + (float)CONSTANT_SCREEN_WIDTH / 2.0f , (float)screenPos.y , WHITE);
+			//DrawText(TextFormat("%d, %d \n%d", x, y,  global_active_room->elevation[x][y]), (float)screenPos.x + (float)CONSTANT_SCREEN_WIDTH / 2.0f , (float)screenPos.y , text_size, tint);
 			break;
 		case ROOM_TILE_PUSHABLE_BLOCK:
-			DrawTexture(texture_push, 	  (float)screenPos.x + (float)GLOBAL_SCREEN_WIDTH / 2.0f , (float)screenPos.y , WHITE);
-			// DrawText(TextFormat("%d, %d \n%d", x, y,  room_1.elevation[x][y]), (float)screenPos.x + (float)GLOBAL_SCREEN_WIDTH / 2.0f , (float)screenPos.y , text_size, tint);
-			DrawText(TextFormat("%d", room_1.elevation[x][y]), (float)screenPos.x + (float)GLOBAL_SCREEN_WIDTH / 2.0f + 24, (float)screenPos.y + 12, text_size, tint);
+			DrawTexture(texture_push, 	  (float)screenPos.x + (float)CONSTANT_SCREEN_WIDTH / 2.0f , (float)screenPos.y , WHITE);
+			// DrawText(TextFormat("%d, %d \n%d", x, y,  global_active_room->elevation[x][y]), (float)screenPos.x + (float)CONSTANT_SCREEN_WIDTH / 2.0f , (float)screenPos.y , text_size, tint);
+			DrawText(TextFormat("%d", global_active_room->elevation[x][y]), (float)screenPos.x + (float)CONSTANT_SCREEN_WIDTH / 2.0f + 24, (float)screenPos.y + 12, text_size, tint);
 			break;
 		case ROOM_TILE_KEY:
-			DrawTexture(texture_key,		  (float)screenPos.x + (float)GLOBAL_SCREEN_WIDTH / 2.0f , (float)screenPos.y , WHITE);
-			//DrawText(TextFormat("%d, %d \n%d", x, y,  room_1.elevation[x][y]), (float)screenPos.x + (float)GLOBAL_SCREEN_WIDTH / 2.0f , (float)screenPos.y , text_size, tint);
+			DrawTexture(texture_key,		  (float)screenPos.x + (float)CONSTANT_SCREEN_WIDTH / 2.0f , (float)screenPos.y , WHITE);
+			//DrawText(TextFormat("%d, %d \n%d", x, y,  global_active_room->elevation[x][y]), (float)screenPos.x + (float)CONSTANT_SCREEN_WIDTH / 2.0f , (float)screenPos.y , text_size, tint);
 			break;
-		case ROOM_TILE_ELEVATED:
-			DrawTexture(texture_elevation, 	  (float)screenPos.x + (float)GLOBAL_SCREEN_WIDTH / 2.0f , (float)screenPos.y , WHITE);
-			DrawText(TextFormat("%d, %d \n%d", x, y,  room_1.elevation[x][y]), (float)screenPos.x + (float)GLOBAL_SCREEN_WIDTH / 2.0f , (float)screenPos.y , text_size, tint);
+		case ROOM_TILE_ELEVATION_1:
+			DrawTexture(texture_elevation, 	  (float)screenPos.x + (float)CONSTANT_SCREEN_WIDTH / 2.0f , (float)screenPos.y , WHITE);
+			//DrawText(TextFormat("%d, %d \n%d", x, y,  global_active_room->elevation[x][y]), (float)screenPos.x + (float)CONSTANT_SCREEN_WIDTH / 2.0f , (float)screenPos.y , text_size, tint);
 			break;
-		case ROOM_TILE_ELEVATED_2:
-			DrawTexture(texture_elevation_2,  (float)screenPos.x + (float)GLOBAL_SCREEN_WIDTH / 2.0f , (float)screenPos.y , WHITE);
-			DrawText(TextFormat("%d, %d \n%d", x, y,  room_1.elevation[x][y]), (float)screenPos.x + (float)GLOBAL_SCREEN_WIDTH / 2.0f , (float)screenPos.y , text_size, tint);
+		case ROOM_TILE_ELEVATION_2:
+			DrawTexture(texture_elevation_2,  (float)screenPos.x + (float)CONSTANT_SCREEN_WIDTH / 2.0f , (float)screenPos.y , WHITE);
+			//DrawText(TextFormat("%d, %d \n%d", x, y,  global_active_room->elevation[x][y]), (float)screenPos.x + (float)CONSTANT_SCREEN_WIDTH / 2.0f , (float)screenPos.y , text_size, tint);
 			break;
 		default:
-			DrawTexture(texture_floor, 	  (float)screenPos.x + (float)GLOBAL_SCREEN_WIDTH / 2.0f , (float)screenPos.y , WHITE);
+			DrawTexture(texture_floor, 	  (float)screenPos.x + (float)CONSTANT_SCREEN_WIDTH / 2.0f , (float)screenPos.y , WHITE);
 			break;
 	}
 }
