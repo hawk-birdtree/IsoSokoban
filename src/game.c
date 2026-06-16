@@ -102,11 +102,14 @@ void game_Draw(void) {
 
     for (int y = 0; y < CONSTANT_GRID_HEIGHT; y++) {
         for (int x = 0; x < CONSTANT_GRID_WIDTH; x++) {
-            map_Draw(x,y);
-            enemy_Draw(x,y);
-            player_Draw(x,y);
+            map_Draw(x, y);
+            enemy_Draw(x, y);
+            if (x == player.x && y == player.y) {
+                player_Draw(player.x, player.y);
+            }
         }
     }
+    
     EndMode2D();
 
     DrawText(TextFormat(": %d", global_gems), 60, 35, 20, WHITE);

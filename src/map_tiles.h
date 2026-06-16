@@ -7,6 +7,8 @@
 Vector2 map_Cartesian_To_Isometric(Vector2 cartPt);
 Vector2 map_Isometric_To_Cartesian(Vector2 isoPt);
 
+extern bool map_player_was_drawn;
+
 Vector2 map_Grid_To_Screen(int x, int y, int elevation);
 void    map_Draw_Ground_Floor(int x, int y);
 void    map_Draw_First_Floor(int x, int y);

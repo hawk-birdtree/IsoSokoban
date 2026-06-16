@@ -74,7 +74,7 @@ static int map_elevation_1 = 1;
 void map_Draw_Ground_Floor(int x, int y)
 {
 	Vector2 screenPos = map_Grid_To_Screen(x, y, global_active_room->layout[x][y][map_elevation_1]);
-	DrawTexture(texture_floor, 	  (float)screenPos.x + (float)CONSTANT_SCREEN_WIDTH / 2.0f , (float)screenPos.y , WHITE);
+	DrawTexture(texture_floor, (float)screenPos.x + (float)CONSTANT_SCREEN_WIDTH / 2.0f , (float)screenPos.y , WHITE);
 }
 
 void map_Draw_First_Floor(int x, int y)
